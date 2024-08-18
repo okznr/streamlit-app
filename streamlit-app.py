@@ -4,12 +4,6 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
-# models
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_google_genai import ChatGoogleGenerativeAI
-
-
 # OpenAI APIキーの設定
 openai.api_key = st.secrets["openai_api_key"]
 
@@ -41,8 +35,8 @@ def fetch_website_content(url):
         st.error(f"Error fetching the website: {e}")
         return None
 
-def summarize_content(content, model, max_tokens=500):
-    """選択されたAIモデルを使用してコンテンツを要約"""
+def summarize_content(content, model="gpt-4o", max_tokens=500):
+    """ChatGPTを使用してコンテンツを要約"""
     try:
         # プロンプトに追加する部分
         system_prompt = """
@@ -81,29 +75,12 @@ def summarize_content(content, model, max_tokens=500):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"以下の内容を日本語で300字程度にまとめてください。:\n\n{content}"}
             ],
-            max_tokens=max_tokens
+            max_tokens=max_tokens  # トークン数を増やす
         )
         return response['choices'][0]['message']['content'].strip()
-    except Exception as e:
+    except openai.OpenAIError as e:  
         st.error(f"Error generating summary: {e}")
         return None
-
-def select_model():
-    """AIモデルを選択"""
-    models = ("GPT-4", "Claude 3.5 Sonnet", "Gemini 1.5 Pro", "GPT-3.5 (not recommended)")
-    model = st.sidebar.radio("Choose a model:", models)
-    if model == "GPT-3.5 (not recommended)":
-        return ChatOpenAI(
-            temperature=0, model_name="gpt-3.5-turbo")
-    elif model == "GPT-4":
-        return ChatOpenAI(
-            temperature=0, model_name="gpt-4o")
-    elif model == "Claude 3.5 Sonnet":
-        return ChatAnthropic(
-            temperature=0, model_name="claude-3-5-sonnet-20240620")
-    elif model == "Gemini 1.5 Pro":
-        return ChatGoogleGenerativeAI(
-            temperature=0, model="gemini-1.5-pro-latest")
 
 def main():
     initialize_app()
@@ -116,9 +93,8 @@ def main():
         else:
             content = fetch_website_content(url)
             if content:
-                model = select_model()  # モデルを選択
                 st.subheader("Summary")
-                summary = summarize_content(content, model)
+                summary = summarize_content(content)
                 if summary:
                     st.write(summary)
 
