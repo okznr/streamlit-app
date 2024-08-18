@@ -35,7 +35,7 @@ def fetch_website_content(url):
         st.error(f"Error fetching the website: {e}")
         return None
 
-def summarize_content(content, model="gpt-4o", max_tokens=250):
+def summarize_content(content, model="gpt-4o", max_tokens=500):
     """ChatGPTを使用してコンテンツを要約"""
     try:
         # プロンプトに追加する部分
@@ -73,7 +73,7 @@ def summarize_content(content, model="gpt-4o", max_tokens=250):
             model=model,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"以下の内容を日本語で500字程度にまとめてください。:\n\n{content}"}
+                {"role": "user", "content": f"以下の内容を日本語で300字程度にまとめてください。:\n\n{content}"}
             ],
             max_tokens=max_tokens  # トークン数を増やす
         )
