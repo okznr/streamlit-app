@@ -82,21 +82,42 @@ def summarize_content(content, model="gpt-4o", max_tokens=500):
         st.error(f"Error generating summary: {e}")
         return None
 
+def perplexity_search(query):
+    """Perplexity検索を使用してWeb検索を行う関数"""
+    search_url = f"https://www.perplexity.ai/search?q={requests.utils.quote(query)}"
+    response = requests.get(search_url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        search_results = soup.find_all('p')
+        return "\n".join([result.get_text() for result in search_results[:5]])  # 上位5つの結果を取得
+    else:
+        return "Perplexity検索で結果が見つかりませんでした。"
+
 def main():
     initialize_app()
 
-    url = st.text_input("Enter URL:")
-    
-    if url:
-        if not is_valid_url(url):
-            st.warning("Please enter a valid URL.")
-        else:
-            content = fetch_website_content(url)
-            if content:
-                st.subheader("Summary")
-                summary = summarize_content(content)
-                if summary:
-                    st.write(summary)
+    # サイドバーにラジオボタンを追加して、ChatGPTとPerplexity検索を切り替え
+    option = st.sidebar.radio("Choose a method:", ("ChatGPT", "Perplexity"))
+
+    if option == "Perplexity":
+        query = st.sidebar.text_input("Enter search query for Perplexity:")
+        if query:
+            st.subheader("Perplexity Search Results")
+            search_results = perplexity_search(query)
+            st.write(search_results)
+    elif option == "ChatGPT":
+        url = st.text_input("Enter URL:")
+        
+        if url:
+            if not is_valid_url(url):
+                st.warning("Please enter a valid URL.")
+            else:
+                content = fetch_website_content(url)
+                if content:
+                    st.subheader("Summary")
+                    summary = summarize_content(content)
+                    if summary:
+                        st.write(summary)
 
 if __name__ == "__main__":
     main()
