@@ -76,8 +76,7 @@ def summarize_content(content, model="gpt-3.5-turbo"):
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Please summarize the following content in 300 characters in Japanese:\n\n{content}"}
-            ],
-            max_tokens=150
+            ]
         )
         return response['choices'][0]['message']['content'].strip()
     except openai.OpenAIError as e:  
