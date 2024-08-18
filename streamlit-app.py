@@ -38,7 +38,7 @@ def fetch_website_content(url):
 def summarize_content(content, model="gpt-3.5-turbo"):
     """ChatGPTを使用してコンテンツを要約"""
     try:
-        # プロンプトに追加する部分
+        # プロンプトに追加する部分 
         system_prompt = """
         あなたは、ユーザーのリクエストに基づいてインターネットで調べ物を行うアシスタントです。
         利用可能なツールを使用して、調査した情報を説明してください。
