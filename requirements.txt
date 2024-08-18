@@ -1,4 +1,4 @@
 streamlit
-langchain
 openai
-tiktoken
+beautifulsoup4
+requests
