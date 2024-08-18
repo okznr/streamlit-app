@@ -13,7 +13,6 @@ def initialize_app():
         page_icon="📝"
     )
     st.title("Web Content Summarizer 📝")
-    st.sidebar.header("Settings")
 
 def is_valid_url(url):
     """URLの形式を検証"""
