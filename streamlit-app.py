@@ -38,7 +38,7 @@ def fetch_website_content(url):
 def summarize_content(content, model="gpt-3.5-turbo"):
     """ChatGPTを使用してコンテンツを要約"""
     try:
-        # プロンプトに追加する部分 
+        # プロンプトに追加する部分
         system_prompt = """
         あなたは、ユーザーのリクエストに基づいてインターネットで調べ物を行うアシスタントです。
         利用可能なツールを使用して、調査した情報を説明してください。
@@ -99,9 +99,10 @@ def main():
                 summary = summarize_content(content)
                 if summary:
                     st.write(summary)
-                st.markdown("---")
-                st.subheader("Original Content")
-                st.write(content)
+                # 以下の行を削除またはコメントアウト
+                # st.markdown("---")
+                # st.subheader("Original Content")
+                # st.write(content)
 
 if __name__ == "__main__":
     main()
