@@ -35,7 +35,7 @@ def fetch_website_content(url):
         st.error(f"Error fetching the website: {e}")
         return None
 
-def summarize_content(content, model="gpt-3.5-turbo"):
+def summarize_content(content, model="gpt-4o", max_tokens=250):
     """ChatGPTを使用してコンテンツを要約"""
     try:
         # プロンプトに追加する部分
@@ -76,7 +76,8 @@ def summarize_content(content, model="gpt-3.5-turbo"):
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Please summarize the following content in 300 characters in Japanese:\n\n{content}"}
-            ]
+            ],
+            max_tokens=max_tokens  # トークン数を増やす
         )
         return response['choices'][0]['message']['content'].strip()
     except openai.OpenAIError as e:  
@@ -98,10 +99,6 @@ def main():
                 summary = summarize_content(content)
                 if summary:
                     st.write(summary)
-                # 以下の行を削除またはコメントアウト
-                # st.markdown("---")
-                # st.subheader("Original Content")
-                # st.write(content)
 
 if __name__ == "__main__":
     main()
