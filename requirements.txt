@@ -2,5 +2,5 @@ streamlit
 openai
 beautifulsoup4
 requests
-langchain-core
-langchain-openai
+langchain
+langchain_community
