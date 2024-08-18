@@ -2,4 +2,6 @@ streamlit
 openai==0.28.0
 beautifulsoup4
 requests
-langchain
+langchain-openai
+langchain-anthropic
+langchain-google-genai
