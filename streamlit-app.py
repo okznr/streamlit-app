@@ -47,7 +47,7 @@ def summarize_content(content, model="gpt-3.5-turbo"):
             max_tokens=150
         )
         return response['choices'][0]['message']['content'].strip()
-    except openai.OpenAIError as e:  
+    except openai.OpenAIError as e:  #
         st.error(f"Error generating summary: {e}")
         return None
 
