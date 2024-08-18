@@ -29,7 +29,6 @@ def fetch_website_content(url):
         response = requests.get(url)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
-        # メインコンテンツのテキストを取得
         content = soup.find('main') or soup.find('article') or soup.find('body')
         return content.get_text(separator="\n").strip() if content else None
     except requests.exceptions.RequestException as e:
@@ -43,32 +42,32 @@ def summarize_content(content, model="gpt-3.5-turbo"):
             model=model,
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": f"以下の内容を300文字程度で日本語で要約してください：\n\n{content}"}
+                {"role": "user", "content": f"Please summarize the following content in 300 characters in Japanese:\n\n{content}"}
             ],
             max_tokens=150
         )
-        return response.choices[0].message['content'].strip()
-    except openai.error.OpenAIError as e:
+        return response['choices'][0]['message']['content'].strip()
+    except openai.OpenAIError as e:  # 修正箇所
         st.error(f"Error generating summary: {e}")
         return None
 
 def main():
     initialize_app()
 
-    url = st.text_input("URLを入力してください:")
+    url = st.text_input("Enter URL:")
     
     if url:
         if not is_valid_url(url):
-            st.warning("有効なURLを入力してください。")
+            st.warning("Please enter a valid URL.")
         else:
             content = fetch_website_content(url)
             if content:
-                st.subheader("要約")
+                st.subheader("Summary")
                 summary = summarize_content(content)
                 if summary:
                     st.write(summary)
                 st.markdown("---")
-                st.subheader("元のテキスト")
+                st.subheader("Original Content")
                 st.write(content)
 
 if __name__ == "__main__":
