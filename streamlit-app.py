@@ -3,6 +3,9 @@ import openai
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 # OpenAI APIキーの設定
 openai.api_key = st.secrets["openai_api_key"]
@@ -35,8 +38,8 @@ def fetch_website_content(url):
         st.error(f"Error fetching the website: {e}")
         return None
 
-def summarize_content(content, model="gpt-4o", max_tokens=500):
-    """ChatGPTを使用してコンテンツを要約"""
+def summarize_content(content, model_instance, max_tokens=500):
+    """選択されたAIモデルを使用してコンテンツを要約"""
     try:
         # プロンプトに追加する部分
         system_prompt = """
@@ -69,55 +72,46 @@ def summarize_content(content, model="gpt-4o", max_tokens=500):
         ユーザーが日本語で質問した場合は日本語で、英語で質問した場合は英語で回答してください。
         """
 
-        response = openai.ChatCompletion.create(
-            model=model,
+        response = model_instance(
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"以下の内容を日本語で300字程度にまとめてください。:\n\n{content}"}
             ],
-            max_tokens=max_tokens  # トークン数を増やす
+            max_tokens=max_tokens
         )
         return response['choices'][0]['message']['content'].strip()
-    except openai.OpenAIError as e:  
+    except Exception as e:
         st.error(f"Error generating summary: {e}")
         return None
 
-def perplexity_search(query):
-    """Perplexity検索を使用してWeb検索を行う関数"""
-    search_url = f"https://www.perplexity.ai/search?q={requests.utils.quote(query)}"
-    response = requests.get(search_url)
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
-        search_results = soup.find_all('p')
-        return "\n".join([result.get_text() for result in search_results[:5]])  # 上位5つの結果を取得
-    else:
-        return "Perplexity検索で結果が見つかりませんでした。"
+def select_model():
+    """AIモデルを選択"""
+    models = ("GPT-4", "Claude 3.5 Sonnet", "Gemini 1.5 Pro")
+    model = st.sidebar.radio("Choose a model:", models)
+
+    if model == "GPT-4":
+        return ChatOpenAI(temperature=0, model_name="gpt-4o").call
+    elif model == "Claude 3.5 Sonnet":
+        return ChatAnthropic(temperature=0, model_name="claude-3-5-sonnet-20240620").call
+    elif model == "Gemini 1.5 Pro":
+        return ChatGoogleGenerativeAI(temperature=0, model="gemini-1.5-pro-latest").call
 
 def main():
     initialize_app()
 
-    # サイドバーにラジオボタンを追加して、ChatGPTとPerplexity検索を切り替え
-    option = st.sidebar.radio("Choose a method:", ("ChatGPT", "Perplexity"))
-
-    if option == "Perplexity":
-        query = st.sidebar.text_input("Enter search query for Perplexity:")
-        if query:
-            st.subheader("Perplexity Search Results")
-            search_results = perplexity_search(query)
-            st.write(search_results)
-    elif option == "ChatGPT":
-        url = st.text_input("Enter URL:")
-        
-        if url:
-            if not is_valid_url(url):
-                st.warning("Please enter a valid URL.")
-            else:
-                content = fetch_website_content(url)
-                if content:
-                    st.subheader("Summary")
-                    summary = summarize_content(content)
-                    if summary:
-                        st.write(summary)
+    url = st.text_input("Enter URL:")
+    
+    if url:
+        if not is_valid_url(url):
+            st.warning("Please enter a valid URL.")
+        else:
+            content = fetch_website_content(url)
+            if content:
+                model_instance = select_model()  # モデルを選択
+                st.subheader("Summary")
+                summary = summarize_content(content, model_instance)
+                if summary:
+                    st.write(summary)
 
 if __name__ == "__main__":
     main()
