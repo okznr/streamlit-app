@@ -1,38 +1,75 @@
 import streamlit as st
-from langchain import OpenAI
-from langchain.docstore.document import Document
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.chains.summarize import load_summarize_chain
+import openai
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
-def generate_response(txt):
-    # Instantiate the LLM model
-    llm = OpenAI(temperature=0, openai_api_key=openai_api_key)
-    # Split text
-    text_splitter = CharacterTextSplitter()
-    texts = text_splitter.split_text(txt)
-    # Create multiple documents
-    docs = [Document(page_content=t) for t in texts]
-    # Text summarization
-    chain = load_summarize_chain(llm, chain_type='map_reduce')
-    return chain.run(docs)
+# OpenAI APIキーの設定
+openai.api_key = st.secrets["openai_api_key"]
 
-# Page title
-st.set_page_config(page_title='🦜🔗 Text Summarization App')
-st.title('🦜🔗 Text Summarization App')
+def initialize_app():
+    st.set_page_config(
+        page_title="Web Content Summarizer",
+        page_icon="📝"
+    )
+    st.title("Web Content Summarizer 📝")
+    st.sidebar.header("Settings")
 
-# Text input
-txt_input = st.text_area('Enter your text', '', height=200)
+def is_valid_url(url):
+    """URLの形式を検証"""
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
 
-# Form to accept user's text input for summarization
-result = []
-with st.form('summarize_form', clear_on_submit=True):
-    openai_api_key = st.text_input('OpenAI API Key', type = 'password', disabled=not txt_input)
-    submitted = st.form_submit_button('Submit')
-    if submitted and openai_api_key.startswith('sk-'):
-        with st.spinner('Calculating...'):
-            response = generate_response(txt_input)
-            result.append(response)
-            del openai_api_key
+def fetch_website_content(url):
+    """Webサイトの内容を取得"""
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        # メインコンテンツのテキストを取得
+        content = soup.find('main') or soup.find('article') or soup.find('body')
+        return content.get_text(separator="\n").strip() if content else None
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching the website: {e}")
+        return None
 
-if len(result):
-    st.info(response)
+def summarize_content(content, model="gpt-3.5-turbo"):
+    """ChatGPTを使用してコンテンツを要約"""
+    try:
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": f"以下の内容を300文字程度で日本語で要約してください：\n\n{content}"}
+            ],
+            max_tokens=150
+        )
+        return response.choices[0].message['content'].strip()
+    except openai.error.OpenAIError as e:
+        st.error(f"Error generating summary: {e}")
+        return None
+
+def main():
+    initialize_app()
+
+    url = st.text_input("URLを入力してください:")
+    
+    if url:
+        if not is_valid_url(url):
+            st.warning("有効なURLを入力してください。")
+        else:
+            content = fetch_website_content(url)
+            if content:
+                st.subheader("要約")
+                summary = summarize_content(content)
+                if summary:
+                    st.write(summary)
+                st.markdown("---")
+                st.subheader("元のテキスト")
+                st.write(content)
+
+if __name__ == "__main__":
+    main()
